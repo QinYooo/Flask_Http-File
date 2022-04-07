@@ -1,17 +1,17 @@
-from crypt import methods
+# from crypt import methods
 import os
 from string import Template
 from flask import Flask,request,send_file,render_template
 from werkzeug.utils import secure_filename
 import json
-
+from socket import *
 app = Flask(__name__)
 pwd=os.path.dirname(__file__)
 
 # define the save path and extension
 UP_LOAD_FOLDER = os.path.join(pwd,'save_file')
 ADMIN_UP_LOAD_FOLDER = os.path.join(pwd,'translate_file')
-ALLOWED_EXTENSIONS={'txt','pdf','jpg','jpeg','gif','avi','mp3'}
+ALLOWED_EXTENSIONS={'txt','pdf','jpg','jpeg','gif','avi','mp4','png'}
 app.config['UP_LOAD_FOLDER']=UP_LOAD_FOLDER
 app.config['ADMIN_UP_LOAD_FOLDER']=ADMIN_UP_LOAD_FOLDER
 # HOST 需要运行前自行设置
@@ -19,6 +19,14 @@ app.config['ADMIN_UP_LOAD_FOLDER']=ADMIN_UP_LOAD_FOLDER
 HOST = "127.0.0.1"
 
 PORT = 5000
+
+#socket
+sockHOST="127.0.0.1"
+sockPORT=8888
+ADDR=(sockHOST,sockPORT)
+sock=socket(AF_INET,SOCK_STREAM)
+sock.connect(ADDR)
+
 
 @app.route('/')
 def index():
@@ -63,8 +71,15 @@ def upload_file():
         else:
             filename=secure_filename(file.filename)
             file.save(os.path.join(app.config['UP_LOAD_FOLDER'],filename))
+            
+            style=1
+            dict={'NAME':name,'FILENAME':filename,'STYLE':style}
+            data=json.dumps(dict)
+            sock.send(bytes(data.encode('utf-8')))
+
             return render_template("upload.html",name=name)+"<b><a href = '/preview?fileId={}'>click here for previewing</a></b>".format(filename)
     return "Hello {} , file uploaded Fail\n".format(name)
+
 
 @app.route("/download")
 def download_file():
